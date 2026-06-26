@@ -1,0 +1,66 @@
+// Prisma Schema for BLOCKCERT full-stack database persistence
+// Compatible with SQLite (default for zero-setup), PostgreSQL, and MongoDB
+
+datasource db {
+  provider = "sqlite" // Switch to "postgresql" or "mongodb" if using production databases
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String
+  role       String   // "SUPER_ADMIN" | "REGISTRAR" | "HOD"
+  department String?  // Scope department view for HOD role
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Certificate {
+  id                    String   @id // Certificate ID (e.g. BC-2026-1001)
+  studentName           String
+  registerNumber        String
+  department            String
+  courseName            String
+  grade                 String
+  issueDate             String
+  hash                  String   // Cryptographic SHA-256 hash
+  ipfsCID               String   // IPFS CID from Pinata
+  txHash                String   // Sepolia transaction hash
+  blockNumber           Int
+  gasUsed               String
+  status                String   // "Secured" | "Revoked"
+  signerAddress         String
+  revocationTxHash      String?  // Sepolia transaction hash for revocation
+  revocationBlockNumber Int?     // Sepolia block number for revocation
+  revokedBy             String?  // Wallet address that revoked the certificate
+  revokedAt             String?  // Timestamp of revocation
+  createdAt             DateTime @default(now())
+}
+
+model VerificationAttempt {
+  id          String   @id @default(uuid())
+  certId      String
+  timestamp   String
+  result      String   // "VERIFIED" | "INVALID" | "TAMPERED" | "REVOKED"
+  method      String   // "ID" | "QR_Scanner" | "QR_Upload"
+  checkedHash String
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  userName  String?
+  userRole  String?
+  action    String   // "LOGIN" | "GENERATE_CERTIFICATE" | "REVOKE_CERTIFICATE" | "VERIFY_CERTIFICATE"
+  details   String
+  timestamp String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
